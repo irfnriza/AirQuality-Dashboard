@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Tren Polusi Udara</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        #chart-others,
+        #chart-co,
+        #chart-month,
+        #chart-season {
+            width: 100%;
+            height: 400px;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            margin-bottom: 50px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        body {
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+            background-color: #f4f4f4;
+          }
+      
+          .map-container {
+            width: 640px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+          }
+      
+          h2 {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+      
+          #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 6px;
+            margin-top: 10px;
+          }
+      
+          #controls {
+            text-align: center;
+            margin-bottom: 10px;
+          }
+      
+          .legend {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            font-size: 13px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+          }
+      
+          .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+          }
+      
+          .legend-color {
+            width: 20px;
+            height: 10px;
+            margin-right: 8px;
+          }
+      
+          #resetBtn {
+            margin-top: 10px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+          }
+      
+          #resetBtn:hover {
+            background-color: #1976d2;
+          }
+    </style>
+</head>
+
+<body>
+
+    <div class="container" id="container1">
+        <h2>Tren Rata-Rata Polusi Udara per Tahun</h2>
+        <h3>Polutan (PM2.5, PM10, SO2, NO2, O3)</h3>
+        <div id="chart-others"></div>
+        <h3>CO</h3>
+        <div id="chart-co"></div>
+    </div>
+
+    <div class="container" id="container2">
+        <h2>Tren Rata-Rata Polusi CO</h2>
+        <h3>Berdasarkan Bulan</h3>
+        <div id="chart-month"></div>
+        <h3>Berdasarkan Musim</h3>
+        <div id="chart-season"></div>
+    </div>
+
+    <div class="container" id="container3">
+        <h2>Tren Rata-Rata Polusi Udara per jamnya</h2>
+        <h3>Polutan (PM2.5, PM10, SO2, NO2, O3)</h3>
+        <div id="chart-dayly"></div>
+        <h3>CO</h3>
+        <div id="chart-co-dayly"></div>
+    </div>
+
+    <div class="container" id="container4">
+        <h2>Perbandingan Kualitas Udara Antar Stasiun</h2>
+        <div id="chart"></div>
+    </div>
+
+    <div class="container" id="container5">
+        <h2>Pengaruh Hari Terhadap Polusi Udara (CO)</h2>
+
+        <h3>Rata-rata CO per Hari (Senin–Minggu)</h3>
+        <div id="chart-weekday"></div>
+
+        <h3>Rata-rata CO: Hari Kerja vs Akhir Pekan</h3>
+        <div id="chart-workweekend"></div>
+    </div>
+
+    <div class="container" id="container6">
+        <h2>Radar Chart: Polutan per Kelas Dampak Kesehatan</h2>
+        <div id="chart2"></div>
+    </div>
+
+    <div class="container" id="container7">
+        <h2>Heatmap Korelasi antara AQI dan Faktor Cuaca</h2>
+        <div id="heatmaps"></div>
+    </div>
+
+    <div class="container" id="container8">
+        <h2>Korelasi Polusi Udara & Kasus Kesehatan</h2>
+
+        <h3>Health Impact Score vs Cardiovascular Cases</h3>
+        <div id="scatter-cardiovascular"></div>
+
+        <h3>Health Impact Score vs Respiratory Cases</h3>
+        <div id="scatter-respiratory"></div>
+
+    </div>
+
+    <div class="map-container">
+        <h2>Peta Persebaran Polusi</h2>
+    
+        <div id="controls">
+          <label for="pollutantSelect">Pilih Polutan: </label>
+          <select id="pollutantSelect">
+            <option value="PM2.5">PM2.5</option>
+            <option value="PM10">PM10</option>
+            <option value="SO2">SO2</option>
+            <option value="NO2">NO2</option>
+            <option value="O3">O3</option>
+            <option value="CO">CO</option>
+          </select>
+          <button id="resetBtn">Reset Zoom</button>
+        </div>
+    
+        <div id="map"></div>
+    
+        <div class="legend">
+          <strong>Legenda Warna (Level Polusi):</strong>
+          <div class="legend-item"><div class="legend-color" style="background:#800026"></div> > 2000</div>
+          <div class="legend-item"><div class="legend-color" style="background:#BD0026"></div> > 1000</div>
+          <div class="legend-item"><div class="legend-color" style="background:#E31A1C"></div> > 500</div>
+          <div class="legend-item"><div class="legend-color" style="background:#FC4E2A"></div> > 200</div>
+          <div class="legend-item"><div class="legend-color" style="background:#FD8D3C"></div> > 100</div>
+          <div class="legend-item"><div class="legend-color" style="background:#FEB24C"></div> > 50</div>
+          <div class="legend-item"><div class="legend-color" style="background:#FED976"></div> > 25</div>
+          <div class="legend-item"><div class="legend-color" style="background:#91cf60"></div> <= 25</div>
+        </div>
+      </div>
+    
+      <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+      <script src="https://d3js.org/d3.v7.min.js"></script>
+      <script src="map.js"></script>
+
+
+    <script src="data-loader.js"></script>
+    <script src="anual-line-chart.js"></script>
+    <script src="mountly-bar-chart.js"></script>
+    <script src="dayly-line-chart.js"></script>
+    <script src="station-grouped-bar-chart.js"></script>
+    <script src="weekday-chart.js"></script>
+    <script src="aqi-hetmaps.js"></script>
+    <script src="scatter-plot.js"></script>
+    <script src="spider-chart.js"></script>
+
+
+</body>
+
+</html>

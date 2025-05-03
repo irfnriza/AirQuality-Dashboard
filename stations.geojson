@@ -1,0 +1,11 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+      { "type": "Feature", "properties": { "station": "Aotizhongxin" }, "geometry": { "type": "Point", "coordinates": [116.417, 39.982] }},
+      { "type": "Feature", "properties": { "station": "Changping" }, "geometry": { "type": "Point", "coordinates": [116.231, 40.218] }},
+      { "type": "Feature", "properties": { "station": "Dongsi" }, "geometry": { "type": "Point", "coordinates": [116.417, 39.929] }},
+      { "type": "Feature", "properties": { "station": "Guanyuan" }, "geometry": { "type": "Point", "coordinates": [116.339, 39.929] }},
+      { "type": "Feature", "properties": { "station": "Tiantan" }, "geometry": { "type": "Point", "coordinates": [116.407, 39.886] }}
+    ]
+  }
+  
