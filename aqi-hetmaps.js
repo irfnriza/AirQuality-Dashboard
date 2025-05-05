@@ -1,32 +1,16 @@
-loadData2().then(data => {
-    const margin = { top: 70, right: 30, bottom: 80, left: 80 },
-        width = 700,
-        height = 700;
+loadData().then(data => {
+    // Ukuran yang disesuaikan untuk diagram
+    const margin = { top: 10, right: 100, bottom: 70, left: 100 },
+        width = 320,
+        height = 320;
 
     // Daftar variabel yang akan dianalisis
-    const variables = ["AQI", "Temperature", "Humidity", "WindSpeed", "PM10", "PM2_5", "NO2", "SO2", "O3"];
-    
-    // Normalisasi nama kolom (ubah PM2_5 menjadi PM2.5 jika perlu)
-    const normalizeColumnNames = (data) => {
-        return data.map(d => {
-            const newD = {};
-            Object.keys(d).forEach(key => {
-                const newKey = key.replace(/\./g, '_'); // Ubah titik menjadi underscore
-                newD[newKey] = d[key];
-            });
-            return newD;
-        });
-    };
-
-    // Normalisasi data
-    const normalizedData = normalizeColumnNames(data);
+    const variables = ["PM2.5", "PM10", "NO2", "SO2", "O3", "CO", "PRES", "DEWP", "TEMP", "RAIN", "WSPM"];
     
     // Konversi ke numerik dan bersihkan data
-    normalizedData.forEach(d => {
+    data.forEach(d => {
         variables.forEach(v => {
-            // Handle kemungkinan perbedaan penulisan nama kolom
-            const colName = v === "PM2_5" ? "PM2_5" : v;
-            d[v] = +d[colName] || 0;
+            d[v] = +d[v] || 0;
             
             // Pastikan tidak ada nilai NaN atau Infinite
             if (isNaN(d[v]) || !isFinite(d[v])) {
@@ -35,7 +19,7 @@ loadData2().then(data => {
         });
     });
 
-    // Fungsi korelasi Pearson yang lebih robust
+    // Fungsi korelasi Pearson
     function pearsonCorrelation(x, y) {
         const n = x.length;
         if (n !== y.length || n === 0) return 0;
@@ -63,8 +47,8 @@ loadData2().then(data => {
     const correlationMatrix = [];
     variables.forEach(var1 => {
         variables.forEach(var2 => {
-            const values1 = normalizedData.map(d => d[var1]);
-            const values2 = normalizedData.map(d => d[var2]);
+            const values1 = data.map(d => d[var1]);
+            const values2 = data.map(d => d[var2]);
             
             // Filter nilai yang valid
             const cleanPairs = values1.map((v1, i) => ({v1, v2: values2[i]}))
@@ -83,13 +67,16 @@ loadData2().then(data => {
         });
     });
 
-    // Gambar heatmap
+    // Gambar heatmap tanpa card tambahan
     drawCorrelationHeatmap(correlationMatrix, variables, width, height, margin);
 
     function drawCorrelationHeatmap(matrix, vars, width, height, margin) {
-        const container = d3.select("#heatmaps").html("");
+        // Bersihkan container terlebih dahulu
+        d3.select("#heatmaps").html("");
         
-        const svg = container.append("svg")
+        // Buat SVG langsung tanpa card container
+        const svg = d3.select("#heatmaps")
+            .append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
             .append("g")
@@ -97,42 +84,51 @@ loadData2().then(data => {
 
         const gridSize = Math.min(width, height) / vars.length;
         
-        // Skala warna diverging untuk korelasi
-        const colorScale = d3.scaleDiverging(d3.interpolateRdBu)
-            .domain([-1, 0, 1]);
+        // Palette warna baru dengan 7 warna
+        const customColors = ["#76c8c8", "#98d1d1", "#badbdb", "#dedad2", "#e4bcad", "#df979e", "#d7658b"];
         
-        // Sumbu X
-        svg.append("g")
-            .selectAll(".x-label")
-            .data(vars)
-            .enter()
-            .append("text")
-            .attr("x", (d, i) => i * gridSize + gridSize / 2)
-            .attr("y", -10)
-            .style("font-size", "10px")
-            .style("text-anchor", "middle")
-            .text(d => d)
-            .attr("transform", "rotate(-45)")
-            .style("fill", "#555");
-
-        // Sumbu Y
+        // Buat color scale dari palet kustom dengan interpolasi
+        const colorScale = d3.scaleSequential()
+            .domain([-1, 1])
+            .interpolator(d3.interpolateRgbBasis(customColors));
+        
+        // Label Y (sebelah kiri)
         svg.append("g")
             .selectAll(".y-label")
             .data(vars)
             .enter()
             .append("text")
-            .attr("x", -15)
+            .attr("class", "y-label")
+            .attr("x", -10)
             .attr("y", (d, i) => i * gridSize + gridSize / 2)
             .style("font-size", "10px")
             .style("text-anchor", "end")
-            .text(d => d)
-            .style("fill", "#555");
+            .style("alignment-baseline", "middle")
+            .style("fill", "#555")
+            .text(d => d);
 
-        // Sel Heatmap
-        svg.selectAll(".cell")
+        // Label X (di bawah, vertikal)
+        svg.append("g")
+            .selectAll(".x-label")
+            .data(vars)
+            .enter()
+            .append("text")
+            .attr("class", "x-label")
+            .attr("x", (d, i) => i * gridSize + gridSize / 2)
+            .attr("y", vars.length * gridSize + 20)
+            .style("font-size", "10px")
+            .style("text-anchor", "start")
+            .style("alignment-baseline", "middle")
+            .attr("transform", (d, i) => `rotate(90, ${i * gridSize + gridSize / 2}, ${vars.length * gridSize + 20})`)
+            .style("fill", "#555")
+            .text(d => d);
+
+        // Sel Heatmap dengan hover effect
+        const cells = svg.selectAll(".cell")
             .data(matrix)
             .enter()
             .append("rect")
+            .attr("class", "cell")
             .attr("x", d => vars.indexOf(d.x) * gridSize)
             .attr("y", d => vars.indexOf(d.y) * gridSize)
             .attr("width", gridSize - 1)
@@ -140,53 +136,136 @@ loadData2().then(data => {
             .style("fill", d => colorScale(d.value))
             .style("stroke", "#fff")
             .style("stroke-width", 0.5)
-            .style("opacity", 0.8);
+            .style("opacity", 1)
+            .style("cursor", "pointer")
+            .on("mouseover", function(event, d) {
+                d3.select(this)
+                    .style("stroke", "#333")
+                    .style("stroke-width", 1.5);
+                
+                // Tampilkan tooltip
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", 0.9);
+                    
+                tooltip.html(`
+                    <strong>${d.x} vs ${d.y}</strong><br>
+                    Korelasi: ${d.value.toFixed(3)}
+                `)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function() {
+                d3.select(this)
+                    .style("stroke", "#fff")
+                    .style("stroke-width", 0.5);
+                    
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
 
-        // Teks nilai korelasi (hanya untuk nilai signifikan)
+        // Teks nilai korelasi (tampilkan semua nilai)
         svg.selectAll(".corr-value")
-            .data(matrix.filter(d => Math.abs(d.value) > 0.2)) // Threshold bisa disesuaikan
+            .data(matrix)
             .enter()
             .append("text")
+            .attr("class", "corr-value")
             .attr("x", d => vars.indexOf(d.x) * gridSize + gridSize / 2)
-            .attr("y", d => vars.indexOf(d.y) * gridSize + gridSize / 2 + 4)
-            .style("font-size", "9px")
+            .attr("y", d => vars.indexOf(d.y) * gridSize + gridSize / 2 + 3)
+            .style("font-size", "8px")
             .style("text-anchor", "middle")
+            .style("pointer-events", "none")
             .text(d => d.value.toFixed(2))
-            .style("fill", d => Math.abs(d.value) > 0.5 ? "#fff" : "#333")
-            .style("font-weight", d => Math.abs(d.value) > 0.7 ? "bold" : "normal");
+            .style("fill", d => {
+                // Pilih warna teks yang kontras dengan background
+                const bgColor = colorScale(d.value);
+                // Cek kecerahan warna background
+                const r = parseInt(bgColor.slice(1, 3), 16);
+                const g = parseInt(bgColor.slice(3, 5), 16);
+                const b = parseInt(bgColor.slice(5, 7), 16);
+                const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                return brightness > 128 ? "#000" : "#fff";
+            })
+            .style("font-weight", "normal");
 
-        // Legend
-        const legendWidth = 200;
-        const legendHeight = 20;
+        // Legend vertikal di sebelah kanan
+        const legendWidth = 20;
+        const legendHeight = 200;
+        const legendX = width + 20;
+        const legendY = (height - legendHeight) / 2;
+        
         const legend = svg.append("g")
-            .attr("transform", `translate(${width/2 - legendWidth/2},${height + 40})`);
+            .attr("transform", `translate(${legendX}, ${legendY})`);
 
+        // Buat gradient untuk legend
+        const defs = svg.append("defs");
+        const linearGradient = defs.append("linearGradient")
+            .attr("id", "correlation-gradient")
+            .attr("x1", "0%")
+            .attr("y1", "100%")  // Mulai dari bawah (nilai -1)
+            .attr("x2", "0%")
+            .attr("y2", "0%");   // Ke atas (nilai 1)
+            
+        // Tambahkan color stops untuk gradient
+        const gradientStops = [
+            { offset: "0%", value: -1 },
+            { offset: "16.67%", value: -0.666 },
+            { offset: "33.33%", value: -0.333 },
+            { offset: "50%", value: 0 },
+            { offset: "66.67%", value: 0.333 },
+            { offset: "83.33%", value: 0.666 },
+            { offset: "100%", value: 1 }
+        ];
+        
+        gradientStops.forEach(stop => {
+            linearGradient.append("stop")
+                .attr("offset", stop.offset)
+                .attr("stop-color", colorScale(stop.value));
+        });
+        
+        // Tambahkan rectangle gradient untuk legend
+        legend.append("rect")
+            .attr("width", legendWidth)
+            .attr("height", legendHeight)
+            .style("fill", "url(#correlation-gradient)");
+            
+        // Axis untuk legend
         const legendScale = d3.scaleLinear()
             .domain([-1, 1])
-            .range([0, legendWidth]);
-
-        const legendAxis = d3.axisBottom(legendScale)
-            .ticks(5);
-
+            .range([legendHeight, 0]);
+            
+        const legendAxis = d3.axisRight(legendScale)
+            .ticks(5)
+            .tickFormat(d3.format(".1f"));
+            
         legend.append("g")
-            .selectAll("rect")
-            .data(d3.range(legendWidth))
-            .enter()
-            .append("rect")
-            .attr("x", d => d)
-            .attr("width", 1)
-            .attr("height", legendHeight)
-            .style("fill", d => colorScale(legendScale.invert(d)));
-
-        legend.append("g")
-            .attr("transform", `translate(0,${legendHeight})`)
+            .attr("transform", `translate(${legendWidth}, 0)`)
             .call(legendAxis);
+            
 
-        legend.append("text")
-            .attr("x", legendWidth / 2)
-            .attr("y", legendHeight + 20)
+        // Tooltip
+        const tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0)
+            .style("position", "absolute")
+            .style("padding", "8px 12px")
+            .style("background", "#fff")
+            .style("border", "1px solid #e0e0e0")
+            .style("border-radius", "4px")
+            .style("box-shadow", "0px 2px 6px rgba(0,0,0,0.2)")
+            .style("pointer-events", "none")
+            .style("font-size", "12px")
+            .style("z-index", 1000);
+            
+        // Tambahkan judul heatmap
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", -30)
             .style("text-anchor", "middle")
-            .text("Korelasi Pearson");
+            .style("font-size", "16px")
+            .style("font-weight", "bold")
+            .text("Matriks Korelasi Polutan");
     }
 }).catch(error => {
     console.error("Error loading or processing data:", error);

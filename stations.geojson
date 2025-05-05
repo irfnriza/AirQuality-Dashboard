@@ -1,11 +1,17 @@
 {
-    "type": "FeatureCollection",
-    "features": [
+  "type": "FeatureCollection",
+  "features": [
       { "type": "Feature", "properties": { "station": "Aotizhongxin" }, "geometry": { "type": "Point", "coordinates": [116.417, 39.982] }},
       { "type": "Feature", "properties": { "station": "Changping" }, "geometry": { "type": "Point", "coordinates": [116.231, 40.218] }},
+      { "type": "Feature", "properties": { "station": "Dingling" }, "geometry": { "type": "Point", "coordinates": [116.172, 40.286] }},
       { "type": "Feature", "properties": { "station": "Dongsi" }, "geometry": { "type": "Point", "coordinates": [116.417, 39.929] }},
       { "type": "Feature", "properties": { "station": "Guanyuan" }, "geometry": { "type": "Point", "coordinates": [116.339, 39.929] }},
-      { "type": "Feature", "properties": { "station": "Tiantan" }, "geometry": { "type": "Point", "coordinates": [116.407, 39.886] }}
-    ]
-  }
-  
+      { "type": "Feature", "properties": { "station": "Gucheng" }, "geometry": { "type": "Point", "coordinates": [116.184, 39.914] }},
+      { "type": "Feature", "properties": { "station": "Huairou" }, "geometry": { "type": "Point", "coordinates": [116.637, 40.313] }},
+      { "type": "Feature", "properties": { "station": "Nongzhanguan" }, "geometry": { "type": "Point", "coordinates": [116.461, 39.933] }},
+      { "type": "Feature", "properties": { "station": "Shunyi" }, "geometry": { "type": "Point", "coordinates": [116.654, 40.128] }},
+      { "type": "Feature", "properties": { "station": "Tiantan" }, "geometry": { "type": "Point", "coordinates": [116.407, 39.886] }},
+      { "type": "Feature", "properties": { "station": "Wanliu" }, "geometry": { "type": "Point", "coordinates": [116.306, 39.993] }},
+      { "type": "Feature", "properties": { "station": "Wanshouxigong" }, "geometry": { "type": "Point", "coordinates": [116.366, 39.882] }}
+  ]
+}
